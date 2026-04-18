@@ -1,36 +1,42 @@
 package main
 
 import (
-	"log"
+	"bufio"
+	"fmt"
 	"net"
 )
 
-//	Client ping and Server pong.
-//
-// - how to read and write from TCP stream
-func main() {
-	listener, err := net.Listen("tcp", ":8081")
+func handle(conn net.Conn) {
+	defer conn.Close()
+
+	stream := bufio.NewReadWriter(
+		bufio.NewReader(conn),
+		bufio.NewWriter(conn),
+	)
+
+	header, err := stream.ReadByte()
 	if err != nil {
-		panic(err)
+		return
 	}
 
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			panic(err)
-		}
-		buffer := make([]byte, 1024)
-		n, err := conn.Read(buffer)
-		if err != nil {
-			return
-		}
-		log.Printf("read from connection %s", string(buffer[:n]))
-
-		_, err = conn.Write([]byte("hello world from server"))
-		if err != nil {
-			return
-		}
-
-		conn.Close()
+	data := make([]byte, header)
+	_, err = stream.Read(data)
+	if err != nil {
+		return
 	}
+
+	fmt.Printf("Data: %s\n", data)
+
+	stream.WriteString("6hellos")
+	stream.Flush()
 }
+
+//
+//func main() {
+//	listener, _ := net.Listen("tcp", ":8081")
+//
+//	for {
+//		conn, _ := listener.Accept()
+//		go handle(conn)
+//	}
+//}
